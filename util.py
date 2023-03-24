@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from torchvision import datasets
+import torch.nn.functional as F
+from torchvision import datasets, transforms
 
 
 # Code from https://blog.paperspace.com/alexnet-pytorch/
@@ -8,7 +9,22 @@ from torchvision import datasets
 
 def get_loaders(data_dir, batch_size, dataset='cifar', train_transforms=None, test_transforms=None):
     # Get datasets
-    dataset = datasets.CIFAR10 if 'cifar' in dataset else datasets.MNIST
+    dataset = datasets.CIFAR10 if 'cifar' in dataset.lower() else datasets.MNIST
+
+    # Set up transforms
+    if train_transforms is None:
+        train_transforms = transforms.Compose([
+            transforms.Resize(64),
+            transforms.ToTensor(),
+        ])
+    if test_transforms is None:
+        test_transforms = transforms.Compose([
+            transforms.Resize(64),
+            transforms.ToTensor(),
+        ])
+
+    # Assert that image size is at least 63x63
+    assert train_transforms.transforms[0].size >= 63
 
     train_dataset = dataset(root=data_dir, train=True, download=True, transform=train_transforms)
     test_dataset = dataset(root=data_dir, train=False, download=True, transform=test_transforms)
@@ -76,3 +92,76 @@ class AlexNet(nn.Module):
         out = self.fc1(out)
         out = self.fc2(out)
         return out
+
+
+def _compute_accuracy(model, data_loader, device):
+    model.eval()
+    with torch.no_grad():
+        correct_pred, num_examples = 0, 0
+        for features, targets in data_loader:
+            features = features.to(device)
+            targets = targets.to(device)
+
+            logits = model(features)
+            _, predicted_labels = torch.max(logits, 1)
+            num_examples += targets.size(0)
+            correct_pred += (predicted_labels == targets).sum()
+    return correct_pred.float()/num_examples * 100
+
+
+def _compute_epoch_loss(model, data_loader, loss_fn, device):
+    model.eval()
+    curr_loss, num_examples = 0., 0
+    with torch.no_grad():
+        for features, targets in data_loader:
+            features = features.to(device)
+            targets = targets.to(device)
+            logits = model(features)
+            loss = loss_fn(logits, targets, reduction='sum')
+            num_examples += targets.size(0)
+            curr_loss += loss
+
+        curr_loss = curr_loss / num_examples
+        return curr_loss
+
+
+def train_model(model, num_epochs, optimizer, device, train_loader, loss_fn=F.cross_entropy, logging_interval=100, print_=False):
+    log_dict = {
+        'train_loss_per_batch': [],
+        'train_acc_per_epoch': [],
+        'train_loss_per_epoch': [],
+    }
+
+    model = model.to(device)
+
+    for epoch in range(num_epochs):
+        # = TRAINING = #
+        model.train()
+        for features, targets in train_loader:
+            features = features.to(device)
+            targets = targets.to(device)
+
+            # Forward and back prop
+            logits = model(features)
+            loss = loss_fn(logits, targets)
+            optimizer.zero_grad()
+            loss.backward()
+
+            # Update model parameters
+            optimizer.step()
+
+            # Logging
+            log_dict['train_loss_per_batch'].append(loss.item())
+
+        # = EVALUATION = #
+        model.eval()
+        with torch.set_grad_enabled(False):
+            log_dict['train_loss_per_epoch'].append(_compute_epoch_loss(model, train_loader, loss_fn, device).item())
+            log_dict['train_acc_per_epoch'].append(_compute_accuracy(model, train_loader, device).item())
+
+        if print_:
+            print(f'Epoch: {epoch+1}/{num_epochs} | '
+                  f'Train Loss: {log_dict["train_loss_per_epoch"][-1]:.4f} | '
+                  f'Train Acc: {log_dict["train_acc_per_epoch"][-1]:.2f}%')
+
+    return log_dict
