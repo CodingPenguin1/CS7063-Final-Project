@@ -4,9 +4,6 @@ import torch.nn.functional as F
 from torchvision import datasets, transforms
 
 
-# Code from https://blog.paperspace.com/alexnet-pytorch/
-
-
 def get_loaders(data_dir, batch_size, dataset='cifar', train_transforms=None, test_transforms=None):
     # Get datasets
     dataset = datasets.CIFAR10 if 'cifar' in dataset.lower() else datasets.MNIST
@@ -15,11 +12,13 @@ def get_loaders(data_dir, batch_size, dataset='cifar', train_transforms=None, te
     if train_transforms is None:
         train_transforms = transforms.Compose([
             transforms.Resize(64),
+            transforms.Grayscale(),
             transforms.ToTensor(),
         ])
     if test_transforms is None:
         test_transforms = transforms.Compose([
             transforms.Resize(64),
+            transforms.Grayscale(),
             transforms.ToTensor(),
         ])
 
@@ -37,61 +36,89 @@ def get_loaders(data_dir, batch_size, dataset='cifar', train_transforms=None, te
 
 
 class AlexNet(nn.Module):
+    # https://www.analyticsvidhya.com/blog/2021/03/introduction-to-the-architecture-of-alexnet/#:~:text=The%20Alexnet%20has%20eight%20layers,layers%20except%20the%20output%20layer.
     def __init__(self, num_classes=10):
         super(AlexNet, self).__init__()
 
-        self.conv0 = nn.Sequential(
+        self.conv1 = nn.Sequential(
             nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0),
             nn.BatchNorm2d(96),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2))
 
-        self.conv1 = nn.Sequential(
+        self.conv2 = nn.Sequential(
             nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2))
 
-        self.conv2 = nn.Sequential(
+        self.conv3 = nn.Sequential(
             nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(384),
             nn.ReLU())
 
-        self.conv3 = nn.Sequential(
+        self.conv4 = nn.Sequential(
             nn.Conv2d(384, 384, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(384),
             nn.ReLU())
 
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
+        self.conv5 = nn.Sequential(
+            nn.Conv2d(384, 256, kernel_size=3, stride=2, padding=0),
             nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2))
 
-        self.fc0 = nn.Sequential(
+        self.fc1 = nn.Sequential(
             nn.Dropout(0.5),
             nn.Linear(9216, 4096),
             nn.ReLU())
 
-        self.fc1 = nn.Sequential(
+        self.fc2 = nn.Sequential(
             nn.Dropout(0.5),
             nn.Linear(4096, 4096),
             nn.ReLU())
 
-        self.fc2 = nn.Sequential(
+        self.fc3 = nn.Sequential(
             nn.Linear(4096, num_classes))
 
     def forward(self, x):
-        out = self.conv0(x)
-        out = self.conv1(out)
+        out = self.conv1(x)
         out = self.conv2(out)
         out = self.conv3(out)
         out = self.conv4(out)
+        out = self.conv5(out)
         out = out.reshape(out.size(0), -1)
-        out = self.fc0(out)
         out = self.fc1(out)
         out = self.fc2(out)
+        out = self.fc3(out)
         return out
+
+
+class SmallCNN(nn.Module):
+    def __init__(self, num_classes=10):
+        super(SmallCNN, self).__init__()
+
+        self.layers = torch.nn.Sequential(
+            # Convolutional Layer 1
+            torch.nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=3, stride=2),
+
+            # Convolutional Layer 2
+            torch.nn.Conv2d(in_channels=2, out_channels=4, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=3, stride=2),
+
+            # Classifier
+            torch.nn.Flatten(),
+            torch.nn.Linear(900, 128),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Dropout(0.5),
+            torch.nn.Linear(128, num_classes)
+        )
+
+    def forward(self, x):
+        return self.layers(x)
 
 
 def _compute_accuracy(model, data_loader, device):
