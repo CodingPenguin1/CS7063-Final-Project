@@ -1,10 +1,11 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
 
-def get_loaders(data_dir, batch_size, dataset='cifar', train_transforms=None, test_transforms=None):
+def get_loaders(data_dir, dataset='cifar', batch_size=128, train_transforms=None, test_transforms=None, download=True):
     # Get datasets
     dataset = datasets.CIFAR10 if 'cifar' in dataset.lower() else datasets.MNIST
 
@@ -25,8 +26,8 @@ def get_loaders(data_dir, batch_size, dataset='cifar', train_transforms=None, te
     # Assert that image size is at least 63x63
     assert train_transforms.transforms[0].size >= 63
 
-    train_dataset = dataset(root=data_dir, train=True, download=True, transform=train_transforms)
-    test_dataset = dataset(root=data_dir, train=False, download=True, transform=test_transforms)
+    train_dataset = dataset(root=data_dir, train=True, download=download, transform=train_transforms)
+    test_dataset = dataset(root=data_dir, train=False, download=download, transform=test_transforms)
 
     # Create loaders
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -95,30 +96,48 @@ class AlexNet(nn.Module):
 
 
 class SmallCNN(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, conv1_count=2, conv2_count=4, fc_size=128):
         super(SmallCNN, self).__init__()
+
+        # conv output size = [(W-K+2P)/S]+1
+        # maxpool output size = floor((W-K)/S)+1
+        conv1_output_shape = int(((64 - 3 + 2 * 1) / 1) + 1)
+        maxpool1_output_shape = int(((conv1_output_shape - 3) / 2) + 1)
+        conv2_output_shape = int(((maxpool1_output_shape - 3 + 2 * 1) / 1) + 1)
+        maxpool2_output_shape = int(((conv2_output_shape - 3) / 2) + 1)
+        fc_input_size = int(maxpool2_output_shape**2 * conv2_count)
+
+        # print(f'Conv 1 output shape: [{conv1_count}, {conv1_output_shape}, {conv1_output_shape}]')
+        # print(f'Pool 1 output shape: [{conv1_count}, {maxpool1_output_shape}, {maxpool1_output_shape}]')
+        # print(f'Conv 2 output shape: [{conv2_count}, {conv2_output_shape}, {conv2_output_shape}]')
+        # print(f'Pool 2 output shape: [{conv2_count}, {maxpool2_output_shape}, {maxpool2_output_shape}]')
+        # print(f'FC input size: {fc_input_size}')
 
         self.layers = torch.nn.Sequential(
             # Convolutional Layer 1
-            torch.nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3, stride=1, padding=1),
+            torch.nn.Conv2d(in_channels=1, out_channels=conv1_count, kernel_size=3, stride=1, padding=1),
             torch.nn.ReLU(inplace=True),
             torch.nn.MaxPool2d(kernel_size=3, stride=2),
 
             # Convolutional Layer 2
-            torch.nn.Conv2d(in_channels=2, out_channels=4, kernel_size=3, stride=1, padding=1),
+            torch.nn.Conv2d(in_channels=conv1_count, out_channels=conv2_count, kernel_size=3, stride=1, padding=1),
             torch.nn.ReLU(inplace=True),
             torch.nn.MaxPool2d(kernel_size=3, stride=2),
 
             # Classifier
             torch.nn.Flatten(),
-            torch.nn.Linear(900, 128),
+            torch.nn.Linear(fc_input_size, fc_size),
             torch.nn.ReLU(inplace=True),
             torch.nn.Dropout(0.5),
-            torch.nn.Linear(128, num_classes)
+            torch.nn.Linear(fc_size, num_classes)
         )
 
     def forward(self, x):
         return self.layers(x)
+
+    def get_num_params(self):
+        model_parameters = filter(lambda p: p.requires_grad, self.parameters())
+        return sum(np.prod(p.size()) for p in model_parameters)
 
 
 def _compute_accuracy(model, data_loader, device):
