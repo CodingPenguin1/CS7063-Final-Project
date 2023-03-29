@@ -19,13 +19,10 @@ from util import *
 MU = 10                  # Parent population size
 LAMBDA = 20              # Child population size
 SUBSTRING_PRECISION = 4  # Number of bits per substring
-MAX_GENERATIONS = 20      # Maximum number of generations to run
+MAX_GENERATIONS = 5      # Maximum number of generations to run
 CROSSOVER_RATE = 0.7     # Probability of crossover
 MUTATION_RATE = 0.2      # Probability of mutation
 ALPHA = 0.5              # Weighting of train accuracy vs capacity (higher = more weight on train accuracy)
-#= EPSILON NOT CURRENTLY BEING USED -75 * log10(0.0001 * num_params) + 100
-EPSILON = 0.00003        # Model capacity is scaled by -e^(epsilon * capacity) + 100 to penalize large models. 0.00002 to 0.00003 is a good range. 0.00003 invalidates models > ~150k params
-#=
 TARGET_FITNESS = 95      # Max possible fitness, regardless of weighting, is 100
 
 # CNN Hyperparameters
@@ -33,12 +30,12 @@ BETAS = (0.9, 0.999)  # For Adam optimizer
 LEARN_RATE = 0.001
 NUM_CLASSES = 10
 NUM_EPOCHS = 10
-TRAIN_CONCURRENT = 7  # Number of models to train concurrently
+TRAIN_CONCURRENT = 6  # Number of models to train concurrently
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Dataset
 DATA_DIR = 'C:/Users/ryanj/MyFiles/Data/pytorch_datasets'
-DATASET = 'cifar'  # 'mnist' or 'cifar'
+DATASET = 'mnist'  # 'mnist' or 'cifar'
 BATCH_SIZE = 128
 
 
@@ -100,9 +97,9 @@ def run_ga():
 
     population = [create_random_bitstring(3 * SUBSTRING_PRECISION) for _ in range(MU)]
     df = pd.DataFrame(columns=['Generation', 'Champion Bitstring', 'Champion Values',
-                               'Champion Fitness', 'Champion Accuracy', 'Champion Capacity',
-                               'Average Fitness', 'Average Capacity', 'Average Accuracy',
-                               'Minimum Fitness', 'Minimum Capacity', 'Minimum Accuracy'])
+                               'Champion Fitness', 'Average Fitness', 'Minimum Fitness',
+                               'Champion Accuracy', 'Average Accuracy', 'Minimum Accuracy',
+                               'Champion Capacity', 'Average Capacity', 'Maximum Capacity'])
 
     for generation in range(1, MAX_GENERATIONS + 1):
         print(f'Generation {generation}:')
@@ -148,16 +145,16 @@ def run_ga():
         avg_accuracy = np.mean([individual['accuracy'] for individual in individual_stats])
         avg_fitness = np.mean([individual['fitness'] for individual in individual_stats])
 
-        min_capacity = np.min([individual['num_params'] for individual in individual_stats])
+        max_capacity = np.max([individual['num_params'] for individual in individual_stats])
         min_accuracy = np.min([individual['accuracy'] for individual in individual_stats])
         min_fitness = np.min([individual['fitness'] for individual in individual_stats])
 
-        print(f'Champ {champion["values"]} fit {champion["fitness"]} acc {champion["accuracy"]} cap {champion["num_params"]} | Avg fit {avg_fitness} | Avg cap {avg_accuracy} | Avg acc {avg_capacity}', end='\n')
+        print(f'Champ {champion["values"]} fit {champion["fitness"]} acc {champion["accuracy"]} cap {champion["num_params"]} | Avg fit {avg_fitness} | Avg cap {avg_capacity} | Avg acc {avg_accuracy}', end='\n')
 
         df.loc[generation] = [generation, champion['bitstring'], champion['values'],
-                              champion['fitness'], champion['accuracy'], champion['num_params'],
-                              avg_fitness, avg_capacity, avg_accuracy,
-                              min_fitness, min_capacity, min_accuracy]
+                              champion['fitness'], avg_fitness, min_fitness,
+                              champion['accuracy'], avg_accuracy, min_accuracy,
+                              champion['num_params'], avg_capacity, max_capacity]
 
         # Termination condition
         if avg_fitness >= TARGET_FITNESS:
