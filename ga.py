@@ -1,5 +1,6 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
+from math import log10
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,9 @@ MAX_GENERATIONS = 20      # Maximum number of generations to run
 CROSSOVER_RATE = 0.7     # Probability of crossover
 MUTATION_RATE = 0.2      # Probability of mutation
 ALPHA = 0.5              # Weighting of train accuracy vs capacity (higher = more weight on train accuracy)
+#= EPSILON NOT CURRENTLY BEING USED -75 * log10(0.0001 * num_params) + 100
 EPSILON = 0.00003        # Model capacity is scaled by -e^(epsilon * capacity) + 100 to penalize large models. 0.00002 to 0.00003 is a good range. 0.00003 invalidates models > ~150k params
+#=
 TARGET_FITNESS = 95      # Max possible fitness, regardless of weighting, is 100
 
 # CNN Hyperparameters
@@ -69,7 +72,8 @@ def fitness(individual):
 
     accuracy = log_dict['train_acc_per_epoch'][-1]
     num_params = model.get_num_params()
-    scaled_num_params = -2.718**(EPSILON * num_params) + 100
+    # scaled_num_params = -2.718**(EPSILON * num_params) + 100
+    scaled_num_params = -75 * log10(0.0001 * num_params) + 100
 
     fitness = max(0, ALPHA * accuracy + (1 - ALPHA) * scaled_num_params)
     return {'fitness': fitness, 'accuracy': accuracy, 'num_params': num_params}
@@ -95,7 +99,8 @@ def run_ga():
     get_loaders(data_dir=DATA_DIR, dataset=DATASET)
 
     population = [create_random_bitstring(3 * SUBSTRING_PRECISION) for _ in range(MU)]
-    df = pd.DataFrame(columns=['Champion Bitstring', 'Champion Values', 'Champion Fitness', 'Champion Accuracy', 'Champion Capacity',
+    df = pd.DataFrame(columns=['Generation', 'Champion Bitstring', 'Champion Values',
+                               'Champion Fitness', 'Champion Accuracy', 'Champion Capacity',
                                'Average Fitness', 'Average Capacity', 'Average Accuracy',
                                'Minimum Fitness', 'Minimum Capacity', 'Minimum Accuracy'])
 
@@ -147,12 +152,12 @@ def run_ga():
         min_accuracy = np.min([individual['accuracy'] for individual in individual_stats])
         min_fitness = np.min([individual['fitness'] for individual in individual_stats])
 
-        print(f'Champ {champion["values"]} fit {champion["fitness"]} acc {champion["accuracy"]} cap {champion["num_params"]} | Avg fit {avg_fitness} | Avg acc {avg_accuracy} | Avg cap {avg_capacity}', end='\n')
+        print(f'Champ {champion["values"]} fit {champion["fitness"]} acc {champion["accuracy"]} cap {champion["num_params"]} | Avg fit {avg_fitness} | Avg cap {avg_accuracy} | Avg acc {avg_capacity}', end='\n')
 
         df.loc[generation] = [generation, champion['bitstring'], champion['values'],
                               champion['fitness'], champion['accuracy'], champion['num_params'],
                               avg_fitness, avg_capacity, avg_accuracy,
-                              min_fitness, min_accuracy, min_capacity]
+                              min_fitness, min_capacity, min_accuracy]
 
         # Termination condition
         if avg_fitness >= TARGET_FITNESS:
