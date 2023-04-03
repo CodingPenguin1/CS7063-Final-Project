@@ -9,6 +9,7 @@ from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 import pickle
+import os
 
 from util import *
 
@@ -310,11 +311,13 @@ def run_es(
         plt.show()
 
     # save champion to file
-    with open('es_champion.txt', 'w') as f:
+    filename = os.path.join('results', f'es_{DATASET}_champion.txt')
+    with open(filename, 'w') as f:
         f.write(f'{champion.x} {champion.fitness}')
 
     # Pickle generational statistics and save to file
-    with open('es_generational_stats.pkl', 'wb') as f:
+    filename = os.path.join('results', f'es_{DATASET}_generational_stats.pkl')
+    with open(filename, 'wb') as f:
         pickle.dump((generational_max, generational_min, generational_mean, generational_diversity), f)
 
                     
