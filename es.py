@@ -30,13 +30,13 @@ NUM_DIMENSIONS = 3 # number of hyperparameters to optimize
 BATCH_SIZE = 128
 NUM_CLASSES = 10
 NUM_EPOCHS = 10
-VALIDATION_TARGET = 97 # target validation accuracy
+VALIDATION_TARGET = 95 # target validation accuracy
 TRAIN_CONCURRENT = 6 # number of models to train concurrently
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Dataset
 DATA_DIR = '~/data/'
-DATASET = 'mnist'  # 'mnist' or 'cifar'
+DATASET = 'cifar'  # 'mnist' or 'cifar'
 
 # ES Gnome class
 class Genome():
