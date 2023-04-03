@@ -17,10 +17,10 @@ from util import *
 MU = 10 # initial population size
 LAMBDA = MU * 2 # offspring population size
 SIGMA_CROSSOVER_RATE = 1 # sigma crossover rate
-X_CROSSOVER_RATE = .2 # x value crossover rate
+X_CROSSOVER_RATE = 0.2 # x value crossover rate
 SIGMA_MUTATION_RATE = 1 # sigma mutation rate
-X_MUTATION_RATE = .8 # x value mutation rate
-MAX_GENERATIONS = 20 # maximum number of generations
+X_MUTATION_RATE = 1 # x value mutation rate
+MAX_GENERATIONS = 10 # maximum number of generations
 CONVERGE_THRESHOLD = 0.001 # threshold for convergence of generational diversity
 FITNESS_ALPHA = 0.7 # fitness function alpha value
 FITNESS_BETA = 0.001 # fitness function beta value
@@ -30,7 +30,7 @@ NUM_DIMENSIONS = 3 # number of hyperparameters to optimize
 BATCH_SIZE = 128
 NUM_CLASSES = 10
 NUM_EPOCHS = 10
-VALIDATION_TARGET = 98 # target validation accuracy
+VALIDATION_TARGET = 97 # target validation accuracy
 TRAIN_CONCURRENT = 6 # number of models to train concurrently
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -266,9 +266,10 @@ def run_es(
             new_population[i].num_epochs_trained = results[i][3]
 
         # select mu genomes to survive 
-        # we are trying to maximize the fitness function so we take the highest mu fitnesses
-        new_population.sort(key=lambda x: x.fitness, reverse=True)
-        population = new_population[:mu]
+        # we are trying to maximize the fitness function so we take the highest mu fitnesses of parent and offspring
+        population.extend(new_population)
+        population.sort(key=lambda x: x.fitness, reverse=True)
+        population = population[:mu]
 
         # get statistics about new population
         fitnesses = [genome.fitness for genome in population]
@@ -298,7 +299,6 @@ def run_es(
         plt.plot(generational_max, label='max fitness')
         plt.plot(generational_min, label='min fitness')
         plt.plot(generational_mean, label='mean fitness')
-        plt.yscale('log')
         plt.title('Generational Statistics')
         plt.legend()
         plt.show()
@@ -306,7 +306,6 @@ def run_es(
         # plot generational diversity
         plt.plot(generational_diversity, label='diversity')
         plt.title('Generational Diversity')
-        plt.yscale('log')
         plt.legend()
         plt.show()
 
