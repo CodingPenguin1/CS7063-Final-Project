@@ -171,11 +171,13 @@ def _compute_epoch_loss(model, data_loader, loss_fn, device):
         return curr_loss
 
 
-def train_model(model, num_epochs, optimizer, device, train_loader, loss_fn=F.cross_entropy, logging_interval=100, print_=False):
+def train_model(model, num_epochs, optimizer, device, train_loader, valid_loader=None, loss_fn=F.cross_entropy, logging_interval=100, print_=False, valid_target=None):
     log_dict = {
         'train_loss_per_batch': [],
         'train_acc_per_epoch': [],
         'train_loss_per_epoch': [],
+        'valid_acc_per_epoch': [],
+        'valid_loss_per_epoch': []
     }
 
     model = model.to(device)
@@ -199,15 +201,30 @@ def train_model(model, num_epochs, optimizer, device, train_loader, loss_fn=F.cr
             # Logging
             log_dict['train_loss_per_batch'].append(loss.item())
 
+        log_dict['num_epochs_trained'] = epoch + 1
         # = EVALUATION = #
         model.eval()
         with torch.set_grad_enabled(False):
             log_dict['train_loss_per_epoch'].append(_compute_epoch_loss(model, train_loader, loss_fn, device).item())
             log_dict['train_acc_per_epoch'].append(_compute_accuracy(model, train_loader, device).item())
+            if valid_loader:
+                log_dict['valid_loss_per_epoch'].append(_compute_epoch_loss(model, valid_loader, loss_fn, device).item())
+                log_dict['valid_acc_per_epoch'].append(_compute_accuracy(model, valid_loader, device).item())
 
         if print_:
             print(f'Epoch: {epoch+1}/{num_epochs} | '
                   f'Train Loss: {log_dict["train_loss_per_epoch"][-1]:.4f} | '
                   f'Train Acc: {log_dict["train_acc_per_epoch"][-1]:.2f}%')
+            
+            if valid_loader:
+                print(f'Epoch: {epoch+1}/{num_epochs} | '
+                      f'Valid Loss: {log_dict["valid_loss_per_epoch"][-1]:.4f} | '
+                      f'Valid Acc: {log_dict["valid_acc_per_epoch"][-1]:.2f}%')
+        
+        if valid_target:
+            if log_dict['valid_acc_per_epoch'][-1] > valid_target:
+                if print_:
+                    print(f'Validation accuracy target reached: {valid_target}')
+                break
 
     return log_dict
