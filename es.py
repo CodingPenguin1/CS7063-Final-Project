@@ -222,7 +222,7 @@ def run_es(
     for gen_count in range(max_generations):
         # print generational stats
         if display_stats:
-            print(f'ES {mu} {lambda_} {x_mutation_rate} {x_crossover_rate} {gen_count} {gen_count * lambda_} {generational_min[-1]:.4f} {generational_mean[-1]:.4f} {generational_diversity[-1]:.4f}', end='\r')
+            print(f'ES {mu} {lambda_} {x_mutation_rate} {x_crossover_rate} {gen_count} {gen_count * lambda_} {generational_min[-1]:.4f} {generational_mean[-1]:.4f} {generational_diversity[-1]:.4f}')
 
         # container to store new generation
         new_population = []
