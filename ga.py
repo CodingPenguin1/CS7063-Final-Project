@@ -18,7 +18,7 @@ from util import *
 # GA Hyperparameters
 MU = 10                  # Parent population size
 LAMBDA = 20              # Child population size
-SUBSTRING_PRECISION = 4  # Number of bits per substring
+SUBSTRING_PRECISION = 8  # Number of bits per substring
 MAX_GENERATIONS = 5      # Maximum number of generations to run
 CROSSOVER_RATE = 0.7     # Probability of crossover
 MUTATION_RATE = 0.2      # Probability of mutation
@@ -35,7 +35,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Dataset
 DATA_DIR = 'C:/Users/ryanj/MyFiles/Data/pytorch_datasets'
-DATASET = 'mnist'  # 'mnist' or 'cifar'
+DATASET = 'cifar'  # 'mnist' or 'cifar'
 BATCH_SIZE = 128
 
 
