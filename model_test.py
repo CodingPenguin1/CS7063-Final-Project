@@ -12,7 +12,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # TODO: if path doesn't exist, change to whatever Mike wants his path to be
-train_loader, test_loader = get_loaders(data_dir='C:/Users/ryanj/MyFiles/Data/pytorch_datasets',
+train_loader, test_loader = get_loaders(data_dir='C:/Users/ryanj/Documents/LocalFiles/Data/pytorch_datasets',
                                         dataset='cifar',
                                         batch_size=128,
                                         train_transforms=None,
