@@ -34,7 +34,7 @@ TRAIN_CONCURRENT = 6  # Number of models to train concurrently
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Dataset
-DATA_DIR = 'C:/Users/ryanj/MyFiles/Data/pytorch_datasets'
+DATA_DIR = 'C:\Users\ryanj\Documents\LocalFiles\Data\pytorch_datasets'
 DATASET = 'cifar'  # 'mnist' or 'cifar'
 BATCH_SIZE = 128
 
