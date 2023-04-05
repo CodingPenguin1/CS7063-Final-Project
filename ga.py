@@ -18,7 +18,7 @@ from util import *
 # GA Hyperparameters
 MU = 10                  # Parent population size
 LAMBDA = 20              # Child population size
-SUBSTRING_PRECISION = 8  # Number of bits per substring
+SUBSTRING_PRECISION = 4  # Number of bits per substring
 MAX_GENERATIONS = 5      # Maximum number of generations to run
 CROSSOVER_RATE = 0.7     # Probability of crossover
 MUTATION_RATE = 0.2      # Probability of mutation
@@ -163,7 +163,13 @@ def run_ga():
 
 
 if __name__ == '__main__':
-    results_df = run_ga()
-    print(results_df)
-    results_df.to_csv(os.path.join('results', f'ga_{DATASET}_{NUM_EPOCHS}_epochs_{MAX_GENERATIONS}_generations.csv'), index=False)
+    # results_df = run_ga()
+    # print(results_df)
+    # results_df.to_csv(os.path.join('results', f'ga_{DATASET}_{NUM_EPOCHS}_epochs_{MAX_GENERATIONS}_generations.csv'), index=False)
+    bitstring = '0000' * 3
+    print(bitstring, interpret_bitstring(bitstring))
+    bitstring = '0001' * 3
+    print(bitstring, interpret_bitstring(bitstring))
+    bitstring = '1111' * 3
+    print(bitstring, interpret_bitstring(bitstring))
 
