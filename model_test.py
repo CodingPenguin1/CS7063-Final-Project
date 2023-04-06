@@ -1,9 +1,8 @@
+import matplotlib.pyplot as plt
 import torch
 from torchinfo import summary
 
 from util import *
-
-import matplotlib.pyplot as plt
 
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
