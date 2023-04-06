@@ -21,9 +21,9 @@ train_loader, test_loader = get_loaders(data_dir='C:/Users/ryanj/Documents/Local
 
 # model = AlexNet(num_classes=10)
 model = SmallCNN(num_classes=10,
-                 conv1_count=7,
-                 conv2_count=3,
-                 fc_size=96
+                 conv1_count=1,
+                 conv2_count=1,
+                 fc_size=16
                  )
 # model = torchvision.models.alexnet()
 summary(model, input_size=(1, 1, 64, 64), device=DEVICE)
