@@ -36,65 +36,6 @@ def get_loaders(data_dir, dataset='cifar', batch_size=128, train_transforms=None
     return train_loader, test_loader
 
 
-class AlexNet(nn.Module):
-    # https://www.analyticsvidhya.com/blog/2021/03/introduction-to-the-architecture-of-alexnet/#:~:text=The%20Alexnet%20has%20eight%20layers,layers%20except%20the%20output%20layer.
-    def __init__(self, num_classes=10):
-        super(AlexNet, self).__init__()
-
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0),
-            nn.BatchNorm2d(96),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2))
-
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2))
-
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(384),
-            nn.ReLU())
-
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(384, 384, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(384),
-            nn.ReLU())
-
-        self.conv5 = nn.Sequential(
-            nn.Conv2d(384, 256, kernel_size=3, stride=2, padding=0),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2))
-
-        self.fc1 = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(9216, 4096),
-            nn.ReLU())
-
-        self.fc2 = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(4096, 4096),
-            nn.ReLU())
-
-        self.fc3 = nn.Sequential(
-            nn.Linear(4096, num_classes))
-
-    def forward(self, x):
-        out = self.conv1(x)
-        out = self.conv2(out)
-        out = self.conv3(out)
-        out = self.conv4(out)
-        out = self.conv5(out)
-        out = out.reshape(out.size(0), -1)
-        out = self.fc1(out)
-        out = self.fc2(out)
-        out = self.fc3(out)
-        return out
-
-
 class SmallCNN(nn.Module):
     def __init__(self, num_classes=10, conv1_count=2, conv2_count=4, fc_size=128):
         super(SmallCNN, self).__init__()
@@ -106,12 +47,6 @@ class SmallCNN(nn.Module):
         conv2_output_shape = int(((maxpool1_output_shape - 3 + 2 * 1) / 1) + 1)
         maxpool2_output_shape = int(((conv2_output_shape - 3) / 2) + 1)
         fc_input_size = int(maxpool2_output_shape**2 * conv2_count)
-
-        # print(f'Conv 1 output shape: [{conv1_count}, {conv1_output_shape}, {conv1_output_shape}]')
-        # print(f'Pool 1 output shape: [{conv1_count}, {maxpool1_output_shape}, {maxpool1_output_shape}]')
-        # print(f'Conv 2 output shape: [{conv2_count}, {conv2_output_shape}, {conv2_output_shape}]')
-        # print(f'Pool 2 output shape: [{conv2_count}, {maxpool2_output_shape}, {maxpool2_output_shape}]')
-        # print(f'FC input size: {fc_input_size}')
 
         self.layers = torch.nn.Sequential(
             # Convolutional Layer 1
@@ -215,12 +150,12 @@ def train_model(model, num_epochs, optimizer, device, train_loader, valid_loader
             print(f'Epoch: {epoch+1}/{num_epochs} | '
                   f'Train Loss: {log_dict["train_loss_per_epoch"][-1]:.4f} | '
                   f'Train Acc: {log_dict["train_acc_per_epoch"][-1]:.2f}%')
-            
+
             if valid_loader:
                 print(f'Epoch: {epoch+1}/{num_epochs} | '
                       f'Valid Loss: {log_dict["valid_loss_per_epoch"][-1]:.4f} | '
                       f'Valid Acc: {log_dict["valid_acc_per_epoch"][-1]:.2f}%')
-        
+
         if valid_target:
             if log_dict['valid_acc_per_epoch'][-1] > valid_target:
                 if print_:

@@ -50,6 +50,7 @@ def create_random_bitstring(length):
 
 
 def interpret_bitstring(bitstring):
+    # Converts a bitstring to a tuple of (conv1_kernel_count, conv2_kernel_count, fc_layer_size)
     x = [int(bitstring[i:i+SUBSTRING_PRECISION], 2) for i in range(0, len(bitstring), SUBSTRING_PRECISION)]
     conv1_kernel_count = x[0] + 1
     conv2_kernel_count = x[1] + 1
@@ -58,6 +59,7 @@ def interpret_bitstring(bitstring):
 
 
 def fitness(individual):
+    # Returns a dict with keys 'fitness', 'accuracy', and 'num_params'
     train_loader, test_loader = get_loaders(data_dir=DATA_DIR, dataset=DATASET, batch_size=BATCH_SIZE, download=False)
 
     conv1_count, conv2_count, fc_size = interpret_bitstring(individual)
@@ -77,6 +79,7 @@ def fitness(individual):
 
 
 def crossover(parent_1, parent_2):
+    # Single point crossover, returns two children
     crossover_point = np.random.randint(low=1, high=len(parent_1) - 1)
     child_1 = parent_1[:crossover_point] + parent_2[crossover_point:]
     child_2 = parent_2[:crossover_point] + parent_1[crossover_point:]
@@ -84,6 +87,7 @@ def crossover(parent_1, parent_2):
 
 
 def mutate(bitstring, mutation_rate):
+    # Mutates a bitstring with the specified mutation rate, returns mutated bitstring
     bitstring = [int(bit) for bit in bitstring]
     for i in range(len(bitstring)):
         if np.random.random() < mutation_rate:
@@ -163,13 +167,7 @@ def run_ga():
 
 
 if __name__ == '__main__':
-    # results_df = run_ga()
-    # print(results_df)
-    # results_df.to_csv(os.path.join('results', f'ga_{DATASET}_{NUM_EPOCHS}_epochs_{MAX_GENERATIONS}_generations.csv'), index=False)
-    bitstring = '0000' * 3
-    print(bitstring, interpret_bitstring(bitstring))
-    bitstring = '0001' * 3
-    print(bitstring, interpret_bitstring(bitstring))
-    bitstring = '1111' * 3
-    print(bitstring, interpret_bitstring(bitstring))
+    results_df = run_ga()
+    print(results_df)
+    results_df.to_csv(os.path.join('results', f'ga_{DATASET}_{NUM_EPOCHS}_epochs_{MAX_GENERATIONS}_generations.csv'), index=False)
 
